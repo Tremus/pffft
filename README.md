@@ -6,7 +6,9 @@ Original repo by Julien Pommier is found [here](https://bitbucket.org/jpommier/p
 
 This has better support for unity builds. Functions & macros in `pffft.c` have been prefixed with _pffft_.
 
-Additionally, supports custom `malloc` & `free`. Simply `#define PFFFT_MALLOC my_malloc` & `#define PFFFT_FREE my_free`
+Additional support for:
+- Custom `malloc` & `free` via `#define PFFFT_MALLOC my_malloc` & `#define PFFFT_FREE my_free`
+- Custom `assert` via `#define PFFFT_ASSERT my_assert` (Useful with debuggers on Windows)
 
 ## TL;DR
 

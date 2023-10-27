@@ -61,7 +61,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include <assert.h>
 
 /* detect compiler flavour */
 #if defined(__GNUC__)
@@ -81,6 +80,10 @@
 #  define PFFFT_FREE free
 #endif
 
+#ifndef PFFFT_ASSERT
+#include <assert.h>
+#  define PFFFT_ASSERT assert
+#endif
 
 /* 
    vector support macros: the rest of the code is independant of
@@ -207,7 +210,7 @@ typedef union v4sf_union {
 
 #include <string.h>
 
-#define pffft_assertv4(v,f0,f1,f2,f3) assert(v.f[0] == (f0) && v.f[1] == (f1) && v.f[2] == (f2) && v.f[3] == (f3))
+#define pffft_assertv4(v,f0,f1,f2,f3) PFFFT_ASSERT(v.f[0] == (f0) && v.f[1] == (f1) && v.f[2] == (f2) && v.f[3] == (f3))
 
 /* detect bugs with the vector support macros */
 void validate_pffft_simd(void) {
@@ -306,7 +309,7 @@ static PFFFT_NEVER_INLINE(void) pffft_passf3_ps(int ido, int l1, const v4sf *cc,
   v4sf tr2, ti2, cr2, ci2, cr3, ci3, dr2, di2, dr3, di3;
   int l1ido = l1*ido;
   float wr1, wi1, wr2, wi2;
-  assert(ido > 2);
+  PFFFT_ASSERT(ido > 2);
   for (k=0; k< l1ido; k += ido, cc+= 3*ido, ch +=ido) {
     for (i=0; i<ido-1; i+=2) {
       tr2 = PFFFT_VADD(cc[i+ido], cc[i+2*ido]);
@@ -421,7 +424,7 @@ static PFFFT_NEVER_INLINE(void) pffft_passf5_ps(int ido, int l1, const v4sf *cc,
 #define pffft_cc_ref(a_1,a_2) cc[(a_2-1)*ido + a_1 + 1]
 #define pffft_ch_ref(a_1,a_3) ch[(a_3-1)*l1*ido + a_1 + 1]
 
-  assert(ido > 2);
+  PFFFT_ASSERT(ido > 2);
   for (k = 0; k < l1; ++k, cc += 5*ido, ch += ido) {
     for (i = 0; i < ido-1; i += 2) {
       ti5 = PFFFT_VSUB(pffft_cc_ref(i  , 2), pffft_cc_ref(i  , 5));
@@ -963,7 +966,7 @@ static PFFFT_NEVER_INLINE(v4sf *) pffft_rfftf1_ps(int n, const v4sf *input_reado
   int nf = ifac[1], k1;
   int l2 = n;
   int iw = n-1;
-  assert(in != out && work1 != work2);
+  PFFFT_ASSERT(in != out && work1 != work2);
   for (k1 = 1; k1 <= nf; ++k1) {
     int kh = nf - k1;
     int ip = ifac[kh + 2];
@@ -990,7 +993,7 @@ static PFFFT_NEVER_INLINE(v4sf *) pffft_rfftf1_ps(int n, const v4sf *input_reado
         pffft_radf2_ps(ido, l1, in, out, &wa[iw]);
         break;
       default:
-        assert(0);
+        PFFFT_ASSERT(0);
         break;
     }
     l2 = l1;
@@ -1010,7 +1013,7 @@ static PFFFT_NEVER_INLINE(v4sf *) pffft_rfftb1_ps(int n, const v4sf *input_reado
   int nf = ifac[1], k1;
   int l1 = 1;
   int iw = 0;
-  assert(in != out);
+  PFFFT_ASSERT(in != out);
   for (k1=1; k1<=nf; k1++) {
     int ip = ifac[k1 + 1];
     int l2 = ip*l1;
@@ -1035,7 +1038,7 @@ static PFFFT_NEVER_INLINE(v4sf *) pffft_rfftb1_ps(int n, const v4sf *input_reado
         pffft_radb2_ps(ido, l1, in, out, &wa[iw]);
         break;
       default:
-        assert(0);
+        PFFFT_ASSERT(0);
         break;
     }
     l1 = l2;
@@ -1155,7 +1158,7 @@ v4sf *pffft_cfftf1_ps(int n, const v4sf *input_readonly, v4sf *work1, v4sf *work
   int nf = ifac[1], k1;
   int l1 = 1;
   int iw = 0;
-  assert(in != out && work1 != work2);
+  PFFFT_ASSERT(in != out && work1 != work2);
   for (k1=2; k1<=nf+1; k1++) {
     int ip = ifac[k1];
     int l2 = ip*l1;
@@ -1181,7 +1184,7 @@ v4sf *pffft_cfftf1_ps(int n, const v4sf *input_readonly, v4sf *work1, v4sf *work
         pffft_passf3_ps(idot, l1, in, out, &wa[iw], &wa[ix2], isign);
       } break;
       default:
-        assert(0);
+        PFFFT_ASSERT(0);
     }
     l1 = l2;
     iw += (ip - 1)*idot;
@@ -1212,9 +1215,9 @@ PFFFT_Setup *pffft_new_setup(int N, pffft_transform_t transform) {
   /* unfortunately, the fft size must be a multiple of 16 for complex FFTs 
      and 32 for real FFTs -- a lot of stuff would need to be rewritten to
      handle other cases (or maybe just switch to a scalar fft, I don't know..) */
-  if (transform == PFFFT_REAL) { assert((N%(2*PFFFT_SIMD_SZ*PFFFT_SIMD_SZ))==0 && N>0); }
-  if (transform == PFFFT_COMPLEX) { assert((N%(PFFFT_SIMD_SZ*PFFFT_SIMD_SZ))==0 && N>0); }
-  //assert((N % 32) == 0);
+  if (transform == PFFFT_REAL) { PFFFT_ASSERT((N%(2*PFFFT_SIMD_SZ*PFFFT_SIMD_SZ))==0 && N>0); }
+  if (transform == PFFFT_COMPLEX) { PFFFT_ASSERT((N%(PFFFT_SIMD_SZ*PFFFT_SIMD_SZ))==0 && N>0); }
+  //PFFFT_ASSERT((N % 32) == 0);
   s->N = N;
   s->transform = transform;  
   /* nb of complex simd vectors */
@@ -1302,7 +1305,7 @@ void pffft_zreorder(PFFFT_Setup *setup, const float *in, float *out, pffft_direc
   int k, N = setup->N, Ncvec = setup->Ncvec;
   const v4sf *vin = (const v4sf*)in;
   v4sf *vout = (v4sf*)out;
-  assert(in != out);
+  PFFFT_ASSERT(in != out);
   if (setup->transform == PFFFT_REAL) {
     int dk = N/32;
     if (direction == PFFFT_FORWARD) {
@@ -1339,7 +1342,7 @@ void pffft_cplx_finalize(int Ncvec, const v4sf *in, v4sf *out, const v4sf *e) {
   int k, dk = Ncvec/PFFFT_SIMD_SZ; // number of 4x4 matrix blocks
   v4sf r0, i0, r1, i1, r2, i2, r3, i3;
   v4sf sr0, dr0, sr1, dr1, si0, di0, si1, di1;
-  assert(in != out);
+  PFFFT_ASSERT(in != out);
   for (k=0; k < dk; ++k) {    
     r0 = in[8*k+0]; i0 = in[8*k+1];
     r1 = in[8*k+2]; i1 = in[8*k+3];
@@ -1383,7 +1386,7 @@ void pffft_cplx_preprocess(int Ncvec, const v4sf *in, v4sf *out, const v4sf *e) 
   int k, dk = Ncvec/PFFFT_SIMD_SZ; // number of 4x4 matrix blocks
   v4sf r0, i0, r1, i1, r2, i2, r3, i3;
   v4sf sr0, dr0, sr1, dr1, si0, di0, si1, di1;
-  assert(in != out);
+  PFFFT_ASSERT(in != out);
   for (k=0; k < dk; ++k) {    
     r0 = in[8*k+0]; i0 = in[8*k+1];
     r1 = in[8*k+2]; i1 = in[8*k+3];
@@ -1480,7 +1483,7 @@ static PFFFT_NEVER_INLINE(void) pffft_real_finalize(int Ncvec, const v4sf *in, v
   static const float s = M_SQRT2/2;
 
   cr.v = in[0]; ci.v = in[Ncvec*2-1];
-  assert(in != out);
+  PFFFT_ASSERT(in != out);
   pffft_real_finalize_4x4(&zero, &zero, in+1, e, out);
 
   /*
@@ -1570,7 +1573,7 @@ static PFFFT_NEVER_INLINE(void) pffft_real_preprocess(int Ncvec, const v4sf *in,
   v4sf_union Xr, Xi, *uout = (v4sf_union*)out;
   float cr0, ci0, cr1, ci1, cr2, ci2, cr3, ci3;
   static const float s = M_SQRT2;
-  assert(in != out);
+  PFFFT_ASSERT(in != out);
   for (k=0; k < 4; ++k) {
     Xr.f[k] = ((float*)in)[8*k];
     Xi.f[k] = ((float*)in)[8*k+4];
@@ -1619,9 +1622,10 @@ void pffft_transform_internal(PFFFT_Setup *setup, const float *finput, float *fo
   v4sf *buff[2]      = { voutput, scratch ? scratch : scratch_on_stack };
   int ib = (nf_odd ^ ordered ? 1 : 0);
 
-  assert(PFFFT_VALIGNED(finput) && PFFFT_VALIGNED(foutput));
+  PFFFT_ASSERT(PFFFT_VALIGNED(finput));
+  PFFFT_ASSERT(PFFFT_VALIGNED(foutput));
 
-  //assert(finput != foutput);
+  //PFFFT_ASSERT(finput != foutput);
   if (direction == PFFFT_FORWARD) {
     ib = !ib;
     if (setup->transform == PFFFT_REAL) { 
@@ -1664,14 +1668,14 @@ void pffft_transform_internal(PFFFT_Setup *setup, const float *finput, float *fo
   
   if (buff[ib] != voutput) {
     /* extra copy required -- this situation should only happen when finput == foutput */
-    assert(finput==foutput);
+    PFFFT_ASSERT(finput==foutput);
     for (k=0; k < Ncvec; ++k) {
       v4sf a = buff[ib][2*k], b = buff[ib][2*k+1];
       voutput[2*k] = a; voutput[2*k+1] = b;
     }
     ib = !ib;
   }
-  assert(buff[ib] == voutput);
+  PFFFT_ASSERT(buff[ib] == voutput);
 }
 
 void pffft_zconvolve_accumulate(PFFFT_Setup *s, const float *a, const float *b, float *ab, float scaling) {
@@ -1704,7 +1708,9 @@ void pffft_zconvolve_accumulate(PFFFT_Setup *s, const float *a, const float *b, 
   int i;
 #endif
 
-  assert(PFFFT_VALIGNED(a) && PFFFT_VALIGNED(b) && PFFFT_VALIGNED(ab));
+  PFFFT_ASSERT(PFFFT_VALIGNED(a));
+  PFFFT_ASSERT(PFFFT_VALIGNED(b));
+  PFFFT_ASSERT(PFFFT_VALIGNED(ab));
   ar = ((v4sf_union*)va)[0].f[0];
   ai = ((v4sf_union*)va)[1].f[0];
   br = ((v4sf_union*)vb)[0].f[0];
@@ -1841,14 +1847,14 @@ void pffft_transform_internal_nosimd(PFFFT_Setup *setup, const float *input, flo
   if (buff[ib] != output) {
     int k;
     // extra copy required -- this situation should happens only when finput == foutput
-    assert(input==output);
+    PFFFT_ASSERT(input==output);
     for (k=0; k < Ncvec; ++k) {
       float a = buff[ib][2*k], b = buff[ib][2*k+1];
       output[2*k] = a; output[2*k+1] = b;
     }
     ib = !ib;
   }
-  assert(buff[ib] == output);
+  PFFFT_ASSERT(buff[ib] == output);
 }
 
 #define pffft_zconvolve_accumulate_nosimd pffft_zconvolve_accumulate
