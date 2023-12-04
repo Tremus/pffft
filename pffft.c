@@ -1756,17 +1756,17 @@ void pffft_zconvolve_accumulate(PFFFT_Setup *s, const float *a, const float *b, 
                : "+r"(a_), "+r"(b_), "+r"(ab_), "+r"(N) : "r"(scaling) : "r8", "q0","q1","q2","q3","q4","q5","q6","q7","q8","q9", "q10","q11","q12","q13","q15","memory");
 #else // default routine, works fine for non-arm cpus with current compilers
   for (i=0; i < Ncvec; i += 2) {
-    v4sf ar, ai, br, bi;
-    ar = va[2*i+0]; ai = va[2*i+1];
-    br = vb[2*i+0]; bi = vb[2*i+1];
-    PFFFT_VCPLXMUL(ar, ai, br, bi);
-    vab[2*i+0] = PFFFT_VMADD(ar, vscal, vab[2*i+0]);
-    vab[2*i+1] = PFFFT_VMADD(ai, vscal, vab[2*i+1]);
-    ar = va[2*i+2]; ai = va[2*i+3];
-    br = vb[2*i+2]; bi = vb[2*i+3];
-    PFFFT_VCPLXMUL(ar, ai, br, bi);
-    vab[2*i+2] = PFFFT_VMADD(ar, vscal, vab[2*i+2]);
-    vab[2*i+3] = PFFFT_VMADD(ai, vscal, vab[2*i+3]);
+    v4sf var, vai, vbr, vbi;
+    var = va[2*i+0]; vai = va[2*i+1];
+    vbr = vb[2*i+0]; vbi = vb[2*i+1];
+    PFFFT_VCPLXMUL(var, vai, vbr, vbi);
+    vab[2*i+0] = PFFFT_VMADD(var, vscal, vab[2*i+0]);
+    vab[2*i+1] = PFFFT_VMADD(vai, vscal, vab[2*i+1]);
+    var = va[2*i+2]; vai = va[2*i+3];
+    vbr = vb[2*i+2]; vbi = vb[2*i+3];
+    PFFFT_VCPLXMUL(var, vai, vbr, vbi);
+    vab[2*i+2] = PFFFT_VMADD(var, vscal, vab[2*i+2]);
+    vab[2*i+3] = PFFFT_VMADD(vai, vscal, vab[2*i+3]);
   }
 #endif
   if (s->transform == PFFFT_REAL) {
